@@ -1,34 +1,64 @@
 use rand::Rng;
 
+trait Input {
+    fn as_float(&self) -> f64;
+}
+
+impl Input for f64 {
+    fn as_float(&self) -> f64 {
+        *self
+    }
+}
+
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-struct WithDeriv {
+struct Weight {
     val: f64,
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
+    input: f64,
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
     derivative: f64,
 }
 
-impl WithDeriv {
+impl Weight {
+    fn random() -> Self {
+        Self {
+            val: rand::thread_rng().gen_range(0.0, 1.0),
+            input: 0.0,
+            derivative: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+struct Bias {
+    val: f64,
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
+    derivative: f64,
+}
+
+impl Bias {
     fn random() -> Self {
         Self { val: rand::thread_rng().gen_range(0.0, 1.0), derivative: 0.0 }
     }
 }
 
-impl Default for WithDeriv {
-    fn default() -> Self {
-        Self::random()
-    }
-}
-
 #[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
 struct Activation {
-    input: f64,
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
     val: f64,
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
     deriv: f64,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct Neuron {
-    weights: Vec<WithDeriv>,
-    bias: WithDeriv,
+    weights: Vec<Weight>,
+    bias: Bias,
     activation: Activation,
 }
 
@@ -36,15 +66,34 @@ impl Neuron {
     fn new(weights: usize) -> Self {
         let mut this = Self {
             weights: Vec::with_capacity(weights),
-            bias: WithDeriv::default(),
+            bias: Bias::random(),
             activation: Activation::default(),
         };
 
         for _ in 0 .. weights {
-            this.weights.push(WithDeriv::default())
+            this.weights.push(Weight::random())
         }
 
         this
+    }
+
+    fn compute_activation<F, I>(&mut self, activation_fn: &F, input: &[I])
+    where
+        F: ActivationFn,
+        I: Input,
+    {
+        self.activation.val = 0.0;
+        for (input, weight) in input.iter().zip(self.weights.iter_mut()) {
+            weight.input = input.as_float();
+            self.activation.val += weight.val * weight.input;
+        }
+        self.activation.val += self.bias.val;
+    }
+}
+
+impl Input for Neuron {
+    fn as_float(&self) -> f64 {
+        self.activation.val
     }
 }
 
@@ -67,20 +116,20 @@ impl DenseLayer {
 
 /// A deep learning, neural network.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct NeuralNetwork<A, C>
+pub struct NeuralNetwork<A, E>
 where
     A: ActivationFn,
-    C: CostFn,
+    E: ErrorFn,
 {
     layers: Vec<DenseLayer>,
     activation_fn: A,
-    cost_fn: C,
+    error_fn: E,
 }
 
-impl<A, C> NeuralNetwork<A, C>
+impl<A, E> NeuralNetwork<A, E>
 where
     A: ActivationFn,
-    C: CostFn,
+    E: ErrorFn,
 {
     /// Creates a new neural network, given the activation and cost functions.
     ///
@@ -88,20 +137,27 @@ where
     /// Panics if the `input_size` or any `layer_size` is zero.
     pub fn new(
         activation_fn: A,
-        cost_fn: C,
+        error_fn: E,
         mut input_size: usize,
         layer_sizes: &[usize],
     ) -> Self {
-        assert_ne!(input_size, 0);
+        if input_size == 0 {
+            panic!("Input size cannot be zero")
+        }
 
         let mut this = Self {
             layers: Vec::with_capacity(layer_sizes.len()),
             activation_fn,
-            cost_fn,
+            error_fn,
         };
 
+        if layer_sizes.len() == 0 {
+            panic!("There must be at least one layer!")
+        }
         for &layer_size in layer_sizes {
-            assert_ne!(layer_size, 0);
+            if layer_size == 0 {
+                panic!("Layer size cannot be zero")
+            }
             this.layers.push(DenseLayer::new(input_size, layer_size));
             input_size = layer_size;
         }
@@ -118,8 +174,8 @@ pub trait ActivationFn {
     fn deriv(&self, input: f64) -> f64;
 }
 
-/// Cost function. Used to compute an error value.
-pub trait CostFn {
+/// Error function. Used to compute an error value.
+pub trait ErrorFn {
     /// Calls the underived version of this function.
     fn call(&self, found: f64, desired: f64) -> f64;
     /// Calls the derivative of this function.
@@ -144,7 +200,7 @@ impl ActivationFn for LogisticFn {
 /// Square error cost function: (found - desired) ** 2
 pub struct SquareError;
 
-impl CostFn for SquareError {
+impl ErrorFn for SquareError {
     fn call(&self, found: f64, desired: f64) -> f64 {
         let diff = found - desired;
         diff * diff
