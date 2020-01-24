@@ -108,8 +108,14 @@ where
     /// Panics if the input doesn't have the size specified at the creation of
     /// the network, or if the `expected` slice parameter doesn't have the size
     /// specified for the last layer.
-    pub fn train(&mut self, input: &[f64], expected: &[f64]) -> f64 {
+    pub fn train(
+        &mut self,
+        input: &[f64],
+        expected: &[f64],
+        scale: f64,
+    ) -> f64 {
         self.compute_derivs(input, expected);
+        self.optimize(scale);
         self.error_fn.join(&self.errors)
     }
 
@@ -186,6 +192,14 @@ where
             curr.compute_derivs(&self.activation_fn, input, next);
         } else {
             next.compute_derivs_last(&self.activation_fn, input, &self.errors);
+        }
+    }
+
+    /// Optimizes the weights and the bias of all neurons using the derivatives
+    /// scaled by scale.
+    fn optimize(&mut self, scale: f64) {
+        for layer in &mut *self.layers {
+            layer.optimize(scale);
         }
     }
 }

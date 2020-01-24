@@ -182,6 +182,15 @@ impl Neuron {
         self.compute_deriv_over_weight(input);
         self.compute_deriv_over_bias();
     }
+
+    /// Optimizes the weights and the bias using the derivatives scaled by
+    /// scale.
+    pub fn optimize(&mut self, scale: f64) {
+        for weight in &mut *self.weights {
+            weight.val -= weight.derivative * scale;
+        }
+        self.bias.val -= self.bias.derivative * scale;
+    }
 }
 
 impl Input for Neuron {

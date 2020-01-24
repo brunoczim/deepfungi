@@ -76,4 +76,12 @@ impl DenseLayer {
             );
         }
     }
+
+    /// Optimizes the weights and the bias of all neurons using the derivatives
+    /// scaled by scale.
+    pub fn optimize(&mut self, scale: f64) {
+        for neuron in &mut *self.neurons {
+            neuron.optimize(scale);
+        }
+    }
 }
