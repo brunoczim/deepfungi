@@ -1,30 +1,30 @@
 use crate::{
-    functions::{ActivationFn, ErrorFn},
+    functions::{ActivationFn, LossFn},
     input::Input,
     layer::DenseLayer,
 };
 
 /// A deep learning, neural network.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct NeuralNetwork<A, E>
+pub struct NeuralNetwork<A, L>
 where
     A: ActivationFn,
-    E: ErrorFn,
+    L: LossFn,
 {
     /// All the layers of this neural network.
     layers: Box<[DenseLayer]>,
     /// Generic activation function.
     activation_fn: A,
     /// Generic error estimative function.
-    error_fn: E,
+    loss_fn: L,
     /// Computed errors.
     errors: Box<[f64]>,
 }
 
-impl<A, E> NeuralNetwork<A, E>
+impl<A, L> NeuralNetwork<A, L>
 where
     A: ActivationFn,
-    E: ErrorFn,
+    L: LossFn,
 {
     /// Creates a new neural network, given the activation and cost functions.
     ///
@@ -32,7 +32,7 @@ where
     /// Panics if the `input_size` or any `layer_size` is zero.
     pub fn new(
         activation_fn: A,
-        error_fn: E,
+        loss_fn: L,
         mut input_size: usize,
         layer_sizes: &[usize],
     ) -> Self {
@@ -55,7 +55,7 @@ where
         Self {
             layers: layers.into(),
             activation_fn,
-            error_fn,
+            loss_fn,
             errors: vec![0.0; input_size].into(),
         }
     }
@@ -68,7 +68,7 @@ where
     /// specified for the last layer.
     pub fn error(&mut self, input: &[f64], expected: &[f64]) -> f64 {
         self.compute_errors(input, expected);
-        self.error_fn.join(&self.errors)
+        self.loss_fn.join(&self.errors)
     }
 
     /// Predicts an output, given an input, based on previous training.
@@ -116,7 +116,7 @@ where
     ) -> f64 {
         self.compute_derivs(input, expected);
         self.optimize(scale);
-        self.error_fn.join(&self.errors)
+        self.loss_fn.join(&self.errors)
     }
 
     /// Computes activation values of each neuron, but not the derivatives.
@@ -160,7 +160,7 @@ where
             .zip(last.neurons().iter())
             .zip(expected.iter());
         for ((err, neuron), &expected) in iter {
-            *err = self.error_fn.call(neuron.as_float(), expected);
+            *err = self.loss_fn.call(neuron.as_float(), expected);
         }
     }
 

@@ -7,7 +7,7 @@ pub trait ActivationFn {
 }
 
 /// Error function. Used to compute an error value.
-pub trait ErrorFn {
+pub trait LossFn {
     /// Calls the underived version of this function.
     fn call(&self, found: f64, desired: f64) -> f64;
     /// Calls the derivative of this function.
@@ -34,7 +34,7 @@ impl ActivationFn for LogisticFn {
 /// Squared error cost function: `(found - desired) ^ 2`
 pub struct SquaredError;
 
-impl ErrorFn for SquaredError {
+impl LossFn for SquaredError {
     fn call(&self, found: f64, desired: f64) -> f64 {
         let diff = found - desired;
         diff * diff
