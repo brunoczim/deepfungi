@@ -1,5 +1,6 @@
 use crate::{
     functions::{ActivationFn, ErrorFn},
+    input::Input,
     layer::DenseLayer,
 };
 
@@ -10,9 +11,13 @@ where
     A: ActivationFn,
     E: ErrorFn,
 {
+    /// All the layers of this neural network.
     layers: Box<[DenseLayer]>,
+    /// Generic activation function.
     activation_fn: A,
+    /// Generic error estimative function.
     error_fn: E,
+    /// Computed errors.
     errors: Box<[f64]>,
 }
 
@@ -62,8 +67,7 @@ where
     /// the network, or if the expected slice doesn't have the size specified
     /// for the last layer.
     pub fn error(&mut self, input: &[f64], expected: &[f64]) -> f64 {
-        self.compute_activations(input);
-        self.compute_errors(expected);
+        self.compute_errors(input, expected);
         self.error_fn.join(&self.errors)
     }
 
@@ -74,8 +78,12 @@ where
     /// the network, or if the output slice doesn't have the size specified
     /// for the last layer.
     pub fn predict(&mut self, input: &[f64], output: &mut [f64]) {
-        let out_size =
-            self.layers.last_mut().expect("One layer is the min").neurons.len();
+        let out_size = self
+            .layers
+            .last_mut()
+            .expect("One layer is the min")
+            .neurons()
+            .len();
         if out_size != output.len() {
             panic!(
                 "Output size should be {}, but it is {}",
@@ -88,8 +96,8 @@ where
 
         let last = self.layers.last_mut().expect("One layer is the min");
 
-        for (neuron, out) in last.neurons.iter().zip(output.iter_mut()) {
-            *out = neuron.activation.val;
+        for (neuron, out) in last.neurons().iter().zip(output.iter_mut()) {
+            *out = neuron.as_float();
         }
     }
 
@@ -105,24 +113,13 @@ where
         self.error_fn.join(&self.errors)
     }
 
-    fn compute_errors(&mut self, expected: &[f64]) {
-        let last = self.layers.last_mut().expect("One layer is the min");
-
-        let iter = self
-            .errors
-            .iter_mut()
-            .zip(last.neurons.iter())
-            .zip(expected.iter());
-        for ((err, neuron), &expected) in iter {
-            *err = self.error_fn.call(neuron.activation.val, expected);
-        }
-    }
-
+    /// Computes activation values of each neuron, but not the derivatives.
+    /// Saves the result.
     fn compute_activations(&mut self, input: &[f64]) {
-        if self.layers[0].neurons.len() != input.len() {
+        if self.layers[0].neurons().len() != input.len() {
             panic!(
                 "Input size should be {}, but is {}",
-                self.layers[0].neurons.len(),
+                self.layers[0].neurons().len(),
                 input.len()
             )
         }
@@ -131,14 +128,30 @@ where
         let (init, rest) = self.layers.split_at_mut(1);
         let mut prev_layer = &mut init[0];
         for layer in rest {
-            layer.compute_activations(&self.activation_fn, &prev_layer.neurons);
+            layer
+                .compute_activations(&self.activation_fn, prev_layer.neurons());
             prev_layer = layer;
         }
     }
 
-    fn compute_derivs(&mut self, input: &[f64], expected: &[f64]) {
+    /// Computes the error of each output. Saves the result.
+    fn compute_errors(&mut self, input: &[f64], expected: &[f64]) {
         self.compute_activations(input);
-        self.compute_errors(expected);
+        let last = self.layers.last_mut().expect("One layer is the min");
+
+        let iter = self
+            .errors
+            .iter_mut()
+            .zip(last.neurons().iter())
+            .zip(expected.iter());
+        for ((err, neuron), &expected) in iter {
+            *err = self.error_fn.call(neuron.as_float(), expected);
+        }
+    }
+
+    /// Computes all the derivatives of the neurons' data. Saves the result.
+    fn compute_derivs(&mut self, input: &[f64], expected: &[f64]) {
+        self.compute_errors(input, expected);
 
         let (mut next, rest) =
             self.layers.split_last_mut().expect("One layer is the min");
@@ -146,12 +159,12 @@ where
         if let Some((mut curr, rest)) = rest.split_last_mut() {
             next.compute_derivs_last(
                 &self.activation_fn,
-                &curr.neurons,
+                curr.neurons(),
                 &self.errors,
             );
 
             for prev in rest.iter_mut().rev() {
-                curr.compute_derivs(&self.activation_fn, &prev.neurons, next);
+                curr.compute_derivs(&self.activation_fn, prev.neurons(), next);
                 next = curr;
                 curr = prev;
             }

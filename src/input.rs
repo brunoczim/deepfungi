@@ -1,4 +1,6 @@
+/// Types that can be used as input.
 pub trait Input {
+    /// The float codification of this type.
     fn as_float(&self) -> f64;
 }
 
