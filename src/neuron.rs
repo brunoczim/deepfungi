@@ -38,7 +38,8 @@ impl Bias {
 /// A neuron's activation data.
 #[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
 struct Activation {
-    /// Computed input, i.e. bias + sum of w[i] * a[i] for weights w, inputs a.
+    /// Computed input, i.e. `bias + sum of w[i] * a[i]` for weights w, inputs
+    /// a.
     #[serde(skip)]
     input: f64,
     /// Value of the activation, i.e. input passed to activation function.

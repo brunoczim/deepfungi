@@ -16,7 +16,7 @@ pub trait ErrorFn {
     fn join(&self, values: &[f64]) -> f64;
 }
 
-/// Logistic function: 1 / (1 + e^(-x))
+/// Logistic function: `1 / (1 + e ^ (-x))`
 pub struct LogisticFn;
 
 impl ActivationFn for LogisticFn {
@@ -31,10 +31,10 @@ impl ActivationFn for LogisticFn {
     }
 }
 
-/// Square error cost function: (found - desired) ** 2
-pub struct SquareError;
+/// Squared error cost function: `(found - desired) ^ 2`
+pub struct SquaredError;
 
-impl ErrorFn for SquareError {
+impl ErrorFn for SquaredError {
     fn call(&self, found: f64, desired: f64) -> f64 {
         let diff = found - desired;
         diff * diff

@@ -64,8 +64,8 @@ where
     ///
     /// # Panics
     /// Panics if the input doesn't have the size specified at the creation of
-    /// the network, or if the expected slice doesn't have the size specified
-    /// for the last layer.
+    /// the network, or if the `expected` slice parameter doesn't have the size
+    /// specified for the last layer.
     pub fn error(&mut self, input: &[f64], expected: &[f64]) -> f64 {
         self.compute_errors(input, expected);
         self.error_fn.join(&self.errors)
@@ -106,8 +106,8 @@ where
     ///
     /// # Panics
     /// Panics if the input doesn't have the size specified at the creation of
-    /// the network, or if the expected slice doesn't have the size specified
-    /// for the last layer.
+    /// the network, or if the `expected` slice parameter doesn't have the size
+    /// specified for the last layer.
     pub fn train(&mut self, input: &[f64], expected: &[f64]) -> f64 {
         self.compute_derivs(input, expected);
         self.error_fn.join(&self.errors)
@@ -115,6 +115,10 @@ where
 
     /// Computes activation values of each neuron, but not the derivatives.
     /// Saves the result.
+    ///
+    /// # Panics
+    /// Panics if the input doesn't have the size specified at the creation of
+    /// the network.
     fn compute_activations(&mut self, input: &[f64]) {
         if self.layers[0].neurons().len() != input.len() {
             panic!(
@@ -135,6 +139,11 @@ where
     }
 
     /// Computes the error of each output. Saves the result.
+    ///
+    /// # Panics
+    /// Panics if the input doesn't have the size specified at the creation of
+    /// the network, or if the `expected` slice parameter doesn't have the size
+    /// specified for the last layer.
     fn compute_errors(&mut self, input: &[f64], expected: &[f64]) {
         self.compute_activations(input);
         let last = self.layers.last_mut().expect("One layer is the min");
@@ -150,6 +159,11 @@ where
     }
 
     /// Computes all the derivatives of the neurons' data. Saves the result.
+    ///
+    /// # Panics
+    /// Panics if the input doesn't have the size specified at the creation of
+    /// the network, or if the `expected` slice parameter doesn't have the size
+    /// specified for the last layer.
     fn compute_derivs(&mut self, input: &[f64], expected: &[f64]) {
         self.compute_errors(input, expected);
 
