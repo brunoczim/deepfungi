@@ -17,8 +17,8 @@ where
     activation_fn: A,
     /// Generic error estimative function.
     loss_fn: L,
-    /// Computed errors.
-    errors: Box<[f64]>,
+    /// Computed losses.
+    losses: Box<[f64]>,
 }
 
 impl<A, L> NeuralNetwork<A, L>
@@ -26,7 +26,7 @@ where
     A: ActivationFn,
     L: LossFn,
 {
-    /// Creates a new neural network, given the activation and cost functions.
+    /// Creates a new neural network, given the activation and loss functions.
     ///
     /// # Panics
     /// Panics if the `input_size` or any `layer_size` is zero.
@@ -56,19 +56,20 @@ where
             layers: layers.into(),
             activation_fn,
             loss_fn,
-            errors: vec![0.0; input_size].into(),
+            losses: vec![0.0; input_size].into(),
         }
     }
 
-    /// Computes the error of the neural network, i.e. the cost.
+    /// Computes the loss of the neural network for the given input and given
+    /// expected output, i.e. the error estimate.
     ///
     /// # Panics
     /// Panics if the input doesn't have the size specified at the creation of
     /// the network, or if the `expected` slice parameter doesn't have the size
     /// specified for the last layer.
-    pub fn error(&mut self, input: &[f64], expected: &[f64]) -> f64 {
-        self.compute_errors(input, expected);
-        self.loss_fn.join(&self.errors)
+    pub fn loss(&mut self, input: &[f64], expected: &[f64]) -> f64 {
+        self.compute_losses(input, expected);
+        self.loss_fn.join(&self.losses)
     }
 
     /// Predicts an output, given an input, based on previous training.
@@ -101,7 +102,7 @@ where
         }
     }
 
-    /// Performs an iteration of training, and returns the cost for the given
+    /// Performs an iteration of training, and returns the loss for the given
     /// input, before training.
     ///
     /// # Panics
@@ -116,7 +117,7 @@ where
     ) -> f64 {
         self.compute_derivs(input, expected);
         self.optimize(scale);
-        self.loss_fn.join(&self.errors)
+        self.loss_fn.join(&self.losses)
     }
 
     /// Computes activation values of each neuron, but not the derivatives.
@@ -144,18 +145,19 @@ where
         }
     }
 
-    /// Computes the error of each output. Saves the result.
+    /// Computes the loss of each output. Saves the result. Also computes the
+    /// activation values.
     ///
     /// # Panics
     /// Panics if the input doesn't have the size specified at the creation of
     /// the network, or if the `expected` slice parameter doesn't have the size
     /// specified for the last layer.
-    fn compute_errors(&mut self, input: &[f64], expected: &[f64]) {
+    fn compute_losses(&mut self, input: &[f64], expected: &[f64]) {
         self.compute_activations(input);
         let last = self.layers.last_mut().expect("One layer is the min");
 
         let iter = self
-            .errors
+            .losses
             .iter_mut()
             .zip(last.neurons().iter())
             .zip(expected.iter());
@@ -165,13 +167,14 @@ where
     }
 
     /// Computes all the derivatives of the neurons' data. Saves the result.
+    /// Also computes the activation values and the losses.
     ///
     /// # Panics
     /// Panics if the input doesn't have the size specified at the creation of
     /// the network, or if the `expected` slice parameter doesn't have the size
     /// specified for the last layer.
     fn compute_derivs(&mut self, input: &[f64], expected: &[f64]) {
-        self.compute_errors(input, expected);
+        self.compute_losses(input, expected);
 
         let (mut next, rest) =
             self.layers.split_last_mut().expect("One layer is the min");
@@ -180,7 +183,7 @@ where
             next.compute_derivs_last(
                 &self.activation_fn,
                 curr.neurons(),
-                &self.errors,
+                &self.losses,
             );
 
             for prev in rest.iter_mut().rev() {
@@ -191,7 +194,7 @@ where
 
             curr.compute_derivs(&self.activation_fn, input, next);
         } else {
-            next.compute_derivs_last(&self.activation_fn, input, &self.errors);
+            next.compute_derivs_last(&self.activation_fn, input, &self.losses);
         }
     }
 

@@ -6,7 +6,7 @@ pub trait ActivationFn {
     fn deriv(&self, input: f64) -> f64;
 }
 
-/// Error function. Used to compute an error value.
+/// Loss function. Used to compute a loss value (the error estimate).
 pub trait LossFn {
     /// Calls the underived version of this function.
     fn call(&self, found: f64, desired: f64) -> f64;
