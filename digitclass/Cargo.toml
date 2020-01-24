@@ -9,5 +9,6 @@ edition = "2018"
 [dependencies]
 deepfungi = { path = "../" }
 serde = "^1.0"
+bincode = "^1.2"
 rand = "^0.7"
 clap = "^2.33"
