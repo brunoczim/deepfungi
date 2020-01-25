@@ -1,4 +1,4 @@
-use crate::{functions::ActivationFn, input::Input, layer::DenseLayer};
+use crate::{functions::ActivationFn, input::Input, layer::Layer};
 use rand::Rng;
 
 /// A weight on an input of a neuron.
@@ -67,10 +67,10 @@ impl Neuron {
     /// A new neuron with support for `weights_len` input size. Also the number
     /// of weights, as the name implies. Callers should certify that this number
     /// is not zero.
-    pub fn new(weights_len: usize) -> Self {
-        let mut weights = Vec::with_capacity(weights_len);
+    pub fn new(input_size: usize) -> Self {
+        let mut weights = Vec::with_capacity(input_size);
 
-        for _ in 0 .. weights_len {
+        for _ in 0 .. input_size {
             weights.push(Weight::random())
         }
 
@@ -81,7 +81,14 @@ impl Neuron {
         }
     }
 
+    /// Returns the expected size of an input, i.e. the number of weights.
+    pub fn input_size(&self) -> usize {
+        self.weights.len()
+    }
+
     /// Computes activation values only, not the derivatives. Saves the result.
+    /// Callers should certify that `input` has the same size as this neuron
+    /// was constructed.
     pub fn compute_activation<F, I>(&mut self, activation_fn: &F, input: &[I])
     where
         F: ActivationFn,
@@ -112,7 +119,7 @@ impl Neuron {
     pub fn compute_deriv_over_act_val(
         &mut self,
         index: usize,
-        next_layer: &DenseLayer,
+        next_layer: &Layer,
     ) {
         self.activation.deriv_over_val = 0.0;
         for neuron in next_layer.neurons() {
@@ -126,7 +133,8 @@ impl Neuron {
 
     /// Computes the derivative over the weights, for each weight. Saves the
     /// result. `compute_deriv_over_act_val` and  `compute_deriv_over_act_input`
-    /// should be called first.
+    /// should be called first. Callers should certify that `input` has the same
+    /// size as this neuron was constructed.
     pub fn compute_deriv_over_weight<I>(&mut self, input: &[I])
     where
         I: Input,
@@ -149,13 +157,15 @@ impl Neuron {
     }
 
     /// Computes all derivatives related to this neuron, for neurons not in the
-    /// last layer. `compute_activation` should be called first.
+    /// last layer. `compute_activation` should be called first. Callers should
+    /// certify that `input` has the same size as this neuron was constructed
+    /// with.
     pub fn compute_all_derivs<F, I>(
         &mut self,
         activation_fn: &F,
         input: &[I],
         index: usize,
-        next_layer: &DenseLayer,
+        next_layer: &Layer,
     ) where
         F: ActivationFn,
         I: Input,
@@ -167,7 +177,9 @@ impl Neuron {
     }
 
     /// Computes all derivatives related to this neuron, for neurons in the last
-    /// layer. `compute_activation` should be called first.
+    /// layer. `compute_activation` should be called first. Callers should
+    /// certify that `input` has the same size as this neuron was constructed
+    /// with.
     pub fn compute_all_derivs_last<F, I>(
         &mut self,
         activation_fn: &F,

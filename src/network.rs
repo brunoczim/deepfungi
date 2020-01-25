@@ -1,8 +1,33 @@
 use crate::{
     functions::{ActivationFn, LossFn},
     input::Input,
-    layer::DenseLayer,
+    layer::Layer,
 };
+use std::slice;
+
+pub use crate::layer::Size as LayerSize;
+
+/// Iterator over layer dimensions (input and output sizes).
+#[derive(Debug)]
+pub struct LayerSizes<'net> {
+    inner: slice::Iter<'net, Layer>,
+}
+
+impl<'net> Iterator for LayerSizes<'net> {
+    type Item = LayerSize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(Layer::size)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+
+    fn nth(&mut self, index: usize) -> Option<Self::Item> {
+        self.inner.nth(index).map(Layer::size)
+    }
+}
 
 /// A deep learning, neural network.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -12,7 +37,7 @@ where
     L: LossFn,
 {
     /// All the layers of this neural network.
-    layers: Box<[DenseLayer]>,
+    layers: Box<[Layer]>,
     /// Generic activation function.
     activation_fn: A,
     /// Generic error estimative function.
@@ -48,7 +73,7 @@ where
             if layer_size == 0 {
                 panic!("Layer size cannot be zero")
             }
-            layers.push(DenseLayer::new(input_size, layer_size));
+            layers.push(Layer::new(input_size, layer_size));
             input_size = layer_size;
         }
 
@@ -58,6 +83,21 @@ where
             loss_fn,
             losses: vec![0.0; input_size].into(),
         }
+    }
+
+    /// Returns the expected input size of the network.
+    pub fn input_size(&self) -> usize {
+        self.layers[0].input_size()
+    }
+
+    /// Returns the expected output size of the network.
+    pub fn output_size(&self) -> usize {
+        self.layers.last().expect("One layer is the min").output_size()
+    }
+
+    /// Returns an iterator over the layer sizes.
+    pub fn layer_sizes(&self) -> LayerSizes {
+        LayerSizes { inner: self.layers.iter() }
     }
 
     /// Computes the loss of the neural network for the given input and given

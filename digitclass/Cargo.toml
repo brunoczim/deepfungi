@@ -12,4 +12,4 @@ deepfungi = { path = "../" }
 serde = "^1.0"
 bincode = "^1.2"
 rand = "^0.7"
-clap = "^2.33"
+structopt = "^0.3.8"

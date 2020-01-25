@@ -1,13 +1,22 @@
 use crate::{functions::ActivationFn, input::Input, neuron::Neuron};
 
+/// The dimensions of a layer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Size {
+    /// Input size of the layer.
+    pub input: usize,
+    /// Output size of the layer.
+    pub output: usize,
+}
+
 /// A dense layer of deep learning, i.e. all layer input connected to all
 /// previous layer output; all layer output connected to all next layer input.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct DenseLayer {
+pub struct Layer {
     neurons: Box<[Neuron]>,
 }
 
-impl DenseLayer {
+impl Layer {
     /// Creates a new dense layer. Caller should certificate that neither
     /// `input_size` nor `output_size` are zero.
     pub fn new(input_size: usize, output_size: usize) -> Self {
@@ -26,8 +35,24 @@ impl DenseLayer {
         &self.neurons
     }
 
+    /// Input size of the layer (weights per neuron).
+    pub fn input_size(&self) -> usize {
+        self.neurons[0].input_size()
+    }
+
+    /// Output size of the layer (neuron count).
+    pub fn output_size(&self) -> usize {
+        self.neurons.len()
+    }
+
+    /// Size of input and output of the layer.
+    pub fn size(&self) -> Size {
+        Size { input: self.input_size(), output: self.output_size() }
+    }
+
     /// Computes the activation values (and not the derivatives) of the neurons
-    /// and saves the result.
+    /// and saves the result. Callers should certify that `input` has the same
+    /// size as this layer was constructed with.
     pub fn compute_activations<F, I>(&mut self, activation_fn: &F, input: &[I])
     where
         F: ActivationFn,
@@ -40,12 +65,14 @@ impl DenseLayer {
 
     /// Computes the all the derivatives of the neurons (activation derivative,
     /// weights derivatives and bias derivatives), for a layer that is not the
-    /// last one. `compute_activations` should be called first.
+    /// last one. `compute_activations` should be called first. Callers should
+    /// certify that `input` has the same size as this layer was constructed
+    /// with.
     pub fn compute_derivs<F, I>(
         &mut self,
         activation_fn: &F,
         input: &[I],
-        next_layer: &DenseLayer,
+        next_layer: &Self,
     ) where
         F: ActivationFn,
         I: Input,
@@ -57,7 +84,9 @@ impl DenseLayer {
 
     /// Computes the all the derivatives of the neurons (activation derivative,
     /// weights derivatives and bias derivatives), for a layer that is the last
-    /// one. `compute_activations` should be called first.
+    /// one. `compute_activations` should be called first. Callers should
+    /// certify that `input` has the same size as this layer was constructed
+    /// with.
     pub fn compute_derivs_last<F, I>(
         &mut self,
         activation_fn: &F,
