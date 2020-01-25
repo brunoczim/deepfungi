@@ -31,7 +31,7 @@ impl<'net> Iterator for LayerSizes<'net> {
 
 /// A deep learning, neural network.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct NeuralNetwork<A, L>
+pub struct Neural<A, L>
 where
     A: ActivationFn,
     L: LossFn,
@@ -46,7 +46,7 @@ where
     losses: Box<[f64]>,
 }
 
-impl<A, L> NeuralNetwork<A, L>
+impl<A, L> Neural<A, L>
 where
     A: ActivationFn,
     L: LossFn,
@@ -123,8 +123,7 @@ where
             .layers
             .last_mut()
             .expect("One layer is the min")
-            .neurons()
-            .len();
+            .output_size();
         if out_size != output.len() {
             panic!(
                 "Output size should be {}, but it is {}",
@@ -167,7 +166,7 @@ where
     /// Panics if the input doesn't have the size specified at the creation of
     /// the network.
     fn compute_activations(&mut self, input: &[f64]) {
-        if self.layers[0].neurons().len() != input.len() {
+        if self.layers[0].input_size() != input.len() {
             panic!(
                 "Input size should be {}, but is {}",
                 self.layers[0].neurons().len(),

@@ -17,6 +17,7 @@ pub trait LossFn {
 }
 
 /// Logistic function: `1 / (1 + e ^ (-x))`
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct LogisticFn;
 
 impl ActivationFn for LogisticFn {
@@ -32,6 +33,7 @@ impl ActivationFn for LogisticFn {
 }
 
 /// Squared error cost function: `(found - desired) ^ 2`
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct SquaredError;
 
 impl LossFn for SquaredError {
@@ -45,10 +47,10 @@ impl LossFn for SquaredError {
     }
 
     fn join(&self, values: &[f64]) -> f64 {
-        let mut acc = 0.0;
+        let mut acc = 0.0f64;
 
-        for val in values {
-            acc += val / values.len() as f64;
+        for &val in values {
+            acc = acc.max(val);
         }
 
         acc
