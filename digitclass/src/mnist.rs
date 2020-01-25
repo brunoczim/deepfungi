@@ -4,9 +4,8 @@ use std::{
     error::Error,
     fmt,
     fs::File,
-    io::{Read, Seek, SeekFrom},
+    io::{BufReader, Read, Seek, SeekFrom},
     path::Path,
-    io::BufReader,
 };
 
 pub const IMAGES_MAGIC: [u8; 4] = [0, 0, 8, 3];
@@ -97,7 +96,7 @@ fn read_header<R1, R2>(
 ) -> Result<(u32, usize, usize)>
 where
     R1: Read,
-    R2: Read
+    R2: Read,
 {
     let mut int = [0; 4];
 

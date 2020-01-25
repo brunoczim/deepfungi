@@ -19,6 +19,10 @@ pub struct Command {
     begin: Option<u32>,
     #[structopt(short = "e", long = "end")]
     end: Option<u32>,
+    #[structopt(default_value = "1", short = "E", long = "epochs")]
+    epochs: u32,
+    #[structopt(default_value = "1.0", short = "r", long = "rate")]
+    rate: f64,
 }
 
 impl Command {
@@ -42,27 +46,33 @@ impl Command {
 
         println!("Training...\n");
 
-        for (i, img) in loaded.images.iter().enumerate() {
-            for elem in &mut *output {
-                *elem = 0.0;
+        for i in 0 .. self.epochs {
+            println!("Epoch {}/{}", i + 1, self.epochs);
+
+            for (i, img) in loaded.images.iter().enumerate() {
+                for elem in &mut *output {
+                    *elem = 0.0;
+                }
+                output[img.label as usize] = 1.0;
+
+                for (elem, &pixel) in input.iter_mut().zip(img.pixels.iter()) {
+                    *elem = pixel as f64 / 255.0;
+                }
+
+                let loss = network.train(&input, &output, self.rate);
+
+                print!(
+                    "\rIteration {:>5}/{:<5}: loss={:<15.13}",
+                    i + 1,
+                    loaded.images.len(),
+                    loss
+                );
             }
-            output[img.label as usize] = 1.0;
 
-            for (elem, &pixel) in input.iter_mut().zip(img.pixels.iter()) {
-                *elem = pixel as f64 / 255.0;
-            }
-
-            let loss = network.train(&input, &output, 1.0);
-
-            print!(
-                "\rIteration {:>5}/{:<5}: loss={:<15.13}",
-                i + 1,
-                loaded.images.len(),
-                loss
-            );
+            println!();
         }
 
-        println!();
+        println!("{:#?}", network);
 
         if let Some(output) = &self.output {
             state::save(output, &network)?;
