@@ -59,23 +59,22 @@ where
         activation_fn: A,
         loss_fn: L,
         mut input_size: usize,
-        layer_sizes: &[usize],
+        mid_layer_sizes: &[usize],
+        output_size: usize,
     ) -> Self {
         if input_size == 0 {
             panic!("Input size cannot be zero")
         }
 
-        let mut layers = Vec::with_capacity(layer_sizes.len());
-        if layer_sizes.len() == 0 {
-            panic!("There must be at least one layer!")
-        }
-        for &layer_size in layer_sizes {
+        let mut layers = Vec::with_capacity(mid_layer_sizes.len() + 1);
+        for &layer_size in mid_layer_sizes {
             if layer_size == 0 {
                 panic!("Layer size cannot be zero")
             }
             layers.push(Layer::new(input_size, layer_size));
             input_size = layer_size;
         }
+        layers.push(Layer::new(input_size, output_size));
 
         Self {
             layers: layers.into(),
@@ -119,11 +118,8 @@ where
     /// the network, or if the output slice doesn't have the size specified
     /// for the last layer.
     pub fn predict(&mut self, input: &[f64], output: &mut [f64]) {
-        let out_size = self
-            .layers
-            .last_mut()
-            .expect("One layer is the min")
-            .output_size();
+        let out_size =
+            self.layers.last_mut().expect("One layer is the min").output_size();
         if out_size != output.len() {
             panic!(
                 "Output size should be {}, but it is {}",
