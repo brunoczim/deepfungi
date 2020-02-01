@@ -56,3 +56,49 @@ impl LossFn for SquaredError {
         acc
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn logistic_fn() {
+        assert!(LogisticFn.call(0.0) - 0.5 < 1e-20);
+        assert!(LogisticFn.call(0.425504) - 0.6048 < 1e-3);
+        assert!(LogisticFn.call(-0.425504) - 0.3952 < 1e-3);
+
+        let val = LogisticFn.call(10.0);
+        assert!(val > 0.0 && val < 1.0);
+
+        let val = LogisticFn.call(-10.0);
+        assert!(val > 0.0 && val < 1.0);
+    }
+
+    #[test]
+    fn logistic_deriv() {
+        assert!(LogisticFn.deriv(0.0) - 0.25 < 1e-20);
+
+        assert!(LogisticFn.deriv(0.425504) - 0.23901 < 1e-3);
+        assert!(LogisticFn.deriv(-0.425504) - 0.23901 < 1e-3);
+
+        let val = LogisticFn.deriv(10.0);
+        assert!(val > 0.0 && val <= 0.25);
+
+        let val = LogisticFn.deriv(-10.0);
+        assert!(val > 0.0 && val <= 0.25);
+    }
+
+    #[test]
+    fn squared_error() {
+        assert!(SquaredError.call(2.0, 5.0) - 9.0 < 1e-20);
+        assert!(SquaredError.call(5.0, 2.0) - 9.0 < 1e-20);
+        assert!(SquaredError.call(1.0, 0.8) - 0.4 < 1e-20);
+    }
+
+    #[test]
+    fn squared_error_deriv() {
+        assert!(SquaredError.deriv(2.0, 5.0) + 6.0 < 1e-20);
+        assert!(SquaredError.deriv(5.0, 2.0) - 6.0 < 1e-20);
+        assert!(SquaredError.deriv(1.0, 0.8) - 0.4 < 1e-20);
+    }
+}

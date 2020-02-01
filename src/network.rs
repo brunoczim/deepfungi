@@ -44,6 +44,8 @@ where
     loss_fn: L,
     /// Computed losses.
     losses: Box<[f64]>,
+    /// Computed losses derivatives.
+    losses_deriv: Box<[f64]>,
 }
 
 impl<A, L> Neural<A, L>
@@ -80,7 +82,8 @@ where
             layers: layers.into(),
             activation_fn,
             loss_fn,
-            losses: vec![0.0; input_size].into(),
+            losses: vec![0.0; output_size].into(),
+            losses_deriv: vec![0.0; output_size].into(),
         }
     }
 
@@ -201,6 +204,27 @@ where
         }
     }
 
+    /// Computes the loss derivatives of each output. Saves the result. Also
+    /// computes the activation values.
+    ///
+    /// # Panics
+    /// Panics if the input doesn't have the size specified at the creation of
+    /// the network, or if the `expected` slice parameter doesn't have the size
+    /// specified for the last layer.
+    fn compute_losses_deriv(&mut self, input: &[f64], expected: &[f64]) {
+        self.compute_losses(input, expected);
+        let last = self.layers.last_mut().expect("One layer is the min");
+
+        let iter = self
+            .losses_deriv
+            .iter_mut()
+            .zip(last.neurons().iter())
+            .zip(expected.iter());
+        for ((err, neuron), &expected) in iter {
+            *err = self.loss_fn.deriv(neuron.as_float(), expected);
+        }
+    }
+
     /// Computes all the derivatives of the neurons' data. Saves the result.
     /// Also computes the activation values and the losses.
     ///
@@ -209,7 +233,7 @@ where
     /// the network, or if the `expected` slice parameter doesn't have the size
     /// specified for the last layer.
     fn compute_derivs(&mut self, input: &[f64], expected: &[f64]) {
-        self.compute_losses(input, expected);
+        self.compute_losses_deriv(input, expected);
 
         let (mut next, rest) =
             self.layers.split_last_mut().expect("One layer is the min");
@@ -218,7 +242,7 @@ where
             next.compute_derivs_last(
                 &self.activation_fn,
                 curr.neurons(),
-                &self.losses,
+                &self.losses_deriv,
             );
 
             for prev in rest.iter_mut().rev() {
@@ -229,7 +253,11 @@ where
 
             curr.compute_derivs(&self.activation_fn, input, next);
         } else {
-            next.compute_derivs_last(&self.activation_fn, input, &self.losses);
+            next.compute_derivs_last(
+                &self.activation_fn,
+                input,
+                &self.losses_deriv,
+            );
         }
     }
 
