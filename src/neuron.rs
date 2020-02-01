@@ -219,12 +219,11 @@ mod test {
     #[test]
     fn activation_val() {
         let mut neuron = Neuron::new(2);
+
         //0.425504
-        //0.6048
         neuron.weights[0].val = 0.225504;
         neuron.weights[1].val = 0.6;
         neuron.bias.val = -0.1;
-
         neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
 
         assert!(neuron.activation.val - 0.6048 < 1e-3);
