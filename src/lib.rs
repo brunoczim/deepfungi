@@ -3,9 +3,6 @@
 /// Test utilities.
 mod test;
 
-/// Trait for types that can be used as input.
-mod input;
-
 /// Artificial neurons and related items.
 mod neuron;
 

@@ -1,19 +1,9 @@
-/// Activation function. Used to compute a neuron's activation value.
+/// Input function. Used to compute a neuron's activation value.
 pub trait ActivationFn {
     /// Calls the underived version of this function.
     fn call(&self, input: f64) -> f64;
     /// Calls the derivative of this function.
     fn deriv(&self, input: f64) -> f64;
-}
-
-/// Loss function. Used to compute a loss value (the error estimate).
-pub trait LossFn {
-    /// Calls the underived version of this function.
-    fn call(&self, found: f64, desired: f64) -> f64;
-    /// Calls the derivative of this function.
-    fn deriv(&self, found: f64, desired: f64) -> f64;
-    /// Computes the combination of the given error values.
-    fn join(&self, values: &[f64]) -> f64;
 }
 
 /// Logistic function: `1 / (1 + e ^ (-x))`
@@ -30,6 +20,16 @@ impl ActivationFn for LogisticFn {
         let base = 1.0 + raised;
         raised / (base * base)
     }
+}
+
+/// Loss function. Used to compute a loss value (the error estimate).
+pub trait LossFn {
+    /// Calls the underived version of this function.
+    fn call(&self, found: f64, desired: f64) -> f64;
+    /// Calls the derivative of this function.
+    fn deriv(&self, found: f64, desired: f64) -> f64;
+    /// Computes the combination of the given error values.
+    fn join(&self, values: &[f64]) -> f64;
 }
 
 /// Squared error cost function: `(found - desired) ^ 2`
@@ -54,6 +54,18 @@ impl LossFn for SquaredError {
         }
 
         acc
+    }
+}
+
+/// Types that can be used as input.
+pub trait Input {
+    /// The float codification of this type.
+    fn activation(&self) -> f64;
+}
+
+impl Input for f64 {
+    fn activation(&self) -> f64 {
+        *self
     }
 }
 

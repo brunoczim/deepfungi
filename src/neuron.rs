@@ -1,4 +1,7 @@
-use crate::{functions::ActivationFn, input::Input, layer::Layer};
+use crate::{
+    functions::{ActivationFn, Input},
+    layer::Layer,
+};
 use rand::Rng;
 
 /// A weight on an input of a neuron.
@@ -96,7 +99,7 @@ impl Neuron {
     {
         self.activation.input = 0.0;
         for (input, weight) in input.iter().zip(self.weights.iter_mut()) {
-            self.activation.input += weight.val * input.as_float();
+            self.activation.input += weight.val * input.activation();
         }
         self.activation.input += self.bias.val;
         self.activation.val = activation_fn.call(self.activation.input);
@@ -143,7 +146,7 @@ impl Neuron {
         for (weight, input) in iter {
             let dval = self.activation.deriv_over_val;
             let dinp = self.activation.deriv_over_input;
-            weight.derivative = dval * dinp * input.as_float();
+            weight.derivative = dval * dinp * input.activation();
         }
     }
 
@@ -203,10 +206,20 @@ impl Neuron {
         }
         self.bias.val -= self.bias.derivative * scale;
     }
+
+    /// Returns the previously computed derivative over activation val.
+    pub fn deriv_over_act_input(&self) -> f64 {
+        self.activation.deriv_over_input
+    }
+
+    /// Returns the previously computed derivative over activation val.
+    pub fn deriv_over_act_val(&self) -> f64 {
+        self.activation.deriv_over_val
+    }
 }
 
 impl Input for Neuron {
-    fn as_float(&self) -> f64 {
+    fn activation(&self) -> f64 {
         self.activation.val
     }
 }

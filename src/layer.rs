@@ -1,4 +1,7 @@
-use crate::{functions::ActivationFn, input::Input, neuron::Neuron};
+use crate::{
+    functions::{ActivationFn, Input},
+    neuron::Neuron,
+};
 
 /// The dimensions of a layer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -118,7 +121,10 @@ impl Layer {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::{functions::LogisticFn, input::Input, neuron};
+    use crate::{
+        functions::{LogisticFn, LossFn, SquaredError},
+        neuron,
+    };
 
     pub fn layer1() -> Layer {
         let mut layer = Layer::new(2, 3);
@@ -143,10 +149,74 @@ pub mod test {
         prev_layer.compute_activations(&LogisticFn, &[1.0, 0.5]);
         layer.compute_activations(&LogisticFn, &prev_layer.neurons);
 
-        assert_float_eq!(prev_layer.neurons[0].as_float(), 0.6048, 1e-3);
-        assert_float_eq!(prev_layer.neurons[1].as_float(), 0.5, 1e-3);
-        assert_float_eq!(prev_layer.neurons[2].as_float(), 0.3952, 1e-3);
-        assert_float_eq!(layer.neurons[0].as_float(), 0.62435, 1e-3);
-        assert_float_eq!(layer.neurons[1].as_float(), 0.57444, 1e-3);
+        assert_float_eq!(prev_layer.neurons[0].activation(), 0.6048, 1e-3);
+        assert_float_eq!(prev_layer.neurons[1].activation(), 0.5, 1e-3);
+        assert_float_eq!(prev_layer.neurons[2].activation(), 0.3952, 1e-3);
+        assert_float_eq!(layer.neurons[0].activation(), 0.62435, 1e-3);
+        assert_float_eq!(layer.neurons[1].activation(), 0.57444, 1e-3);
+    }
+
+    #[test]
+    fn derivatives() {
+        let mut prev_layer = layer1();
+        let mut layer = layer2();
+
+        prev_layer.compute_activations(&LogisticFn, &[1.0, 0.5]);
+        layer.compute_activations(&LogisticFn, &prev_layer.neurons);
+        layer.compute_derivs_last(
+            &LogisticFn,
+            &prev_layer.neurons,
+            &[
+                SquaredError.deriv(layer.neurons[0].activation(), 0.0),
+                SquaredError.deriv(layer.neurons[1].activation(), 1.0),
+            ],
+        );
+        prev_layer.compute_derivs(&LogisticFn, &[1.0, 0.5], &layer);
+
+        assert_float_eq!(prev_layer.neurons[0].activation(), 0.6048, 1e-3);
+        assert_float_eq!(prev_layer.neurons[1].activation(), 0.5, 1e-3);
+        assert_float_eq!(prev_layer.neurons[2].activation(), 0.3952, 1e-3);
+        assert_float_eq!(layer.neurons[0].activation(), 0.62435, 1e-3);
+        assert_float_eq!(layer.neurons[1].activation(), 0.57444, 1e-3);
+
+        assert_float_eq!(
+            prev_layer.neurons[0].deriv_over_act_input(),
+            0.23901,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[1].deriv_over_act_input(),
+            0.25,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[2].deriv_over_act_input(),
+            0.23901,
+            1e-3
+        );
+        assert_float_eq!(layer.neurons[0].deriv_over_act_input(), 0.2345, 1e-3);
+        assert_float_eq!(
+            layer.neurons[1].deriv_over_act_input(),
+            0.24446,
+            1e-3
+        );
+
+        assert_float_eq!(layer.neurons[0].deriv_over_act_val(), 1.2487, 1e-3);
+        assert_float_eq!(layer.neurons[1].deriv_over_act_val(), -0.85112, 1e-3);
+        assert_float_eq!(
+            prev_layer.neurons[0].deriv_over_act_val(),
+            0.033902,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[1].deriv_over_act_val(),
+            0.06703,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[2].deriv_over_act_val(),
+            0.15103,
+            1e-3
+        );
     }
 }

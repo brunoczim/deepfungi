@@ -1,6 +1,5 @@
 use crate::{
-    functions::{ActivationFn, LossFn},
-    input::Input,
+    functions::{ActivationFn, Input, LossFn},
     layer::Layer,
 };
 use std::slice;
@@ -136,7 +135,7 @@ where
         let last = self.layers.last_mut().expect("One layer is the min");
 
         for (neuron, out) in last.neurons().iter().zip(output.iter_mut()) {
-            *out = neuron.as_float();
+            *out = neuron.activation();
         }
     }
 
@@ -200,7 +199,7 @@ where
             .zip(last.neurons().iter())
             .zip(expected.iter());
         for ((err, neuron), &expected) in iter {
-            *err = self.loss_fn.call(neuron.as_float(), expected);
+            *err = self.loss_fn.call(neuron.activation(), expected);
         }
     }
 
@@ -221,7 +220,7 @@ where
             .zip(last.neurons().iter())
             .zip(expected.iter());
         for ((err, neuron), &expected) in iter {
-            *err = self.loss_fn.deriv(neuron.as_float(), expected);
+            *err = self.loss_fn.deriv(neuron.activation(), expected);
         }
     }
 
