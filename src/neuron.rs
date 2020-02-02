@@ -212,20 +212,120 @@ impl Input for Neuron {
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
     use crate::functions::LogisticFn;
 
-    #[test]
-    fn activation_val() {
+    // 0.425504 for input [1.0, 0.5]
+    pub fn neuron1() -> Neuron {
         let mut neuron = Neuron::new(2);
 
-        //0.425504
         neuron.weights[0].val = 0.225504;
         neuron.weights[1].val = 0.6;
         neuron.bias.val = -0.1;
-        neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
 
-        assert!(neuron.activation.val - 0.6048 < 1e-3);
+        neuron
+    }
+
+    // 0 for input [1.0, 0.5]
+    pub fn neuron2() -> Neuron {
+        let mut neuron = Neuron::new(2);
+
+        neuron.weights[0].val = 0.1;
+        neuron.weights[1].val = 0.6;
+        neuron.bias.val = -0.4;
+
+        neuron
+    }
+
+    /// -0.425504 for input [1.0, 0.5]
+    pub fn neuron3() -> Neuron {
+        let mut neuron = Neuron::new(2);
+
+        neuron.weights[0].val = -0.22504;
+        neuron.weights[1].val = -0.6;
+        neuron.bias.val = 0.1;
+
+        neuron
+    }
+
+    /// 0.5 for input [0.5, 1.0, 0.25]
+    pub fn neuron4() -> Neuron {
+        let mut neuron = Neuron::new(3);
+
+        neuron.weights[0].val = 0.4;
+        neuron.weights[1].val = 0.3;
+        neuron.weights[2].val = 0.8;
+        neuron.bias.val = -0.2;
+
+        neuron
+    }
+
+    /// 0.25 for input [0.5, 1.0, 0.25]
+    pub fn neuron5() -> Neuron {
+        let mut neuron = Neuron::new(3);
+
+        neuron.weights[0].val = 0.4;
+        neuron.weights[1].val = 0.1;
+        neuron.weights[2].val = 0.4;
+        neuron.bias.val = -0.15;
+
+        neuron
+    }
+
+    #[test]
+    fn activation_val() {
+        let mut neuron = neuron1();
+        neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
+        assert_float_eq!(neuron.activation.val, 0.6048, 1e-3);
+
+        let mut neuron = neuron2();
+        neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
+        assert_float_eq!(neuron.activation.val, 0.5, 1e-3);
+
+        let mut neuron = neuron3();
+        neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
+        assert_float_eq!(neuron.activation.val, 0.3952, 1e-3);
+
+        let mut neuron = neuron4();
+        neuron.compute_activation(&LogisticFn, &[0.5, 1.0, 0.25]);
+        assert_float_eq!(neuron.activation.val, 0.62246, 1e-3);
+
+        let mut neuron = neuron5();
+        neuron.compute_activation(&LogisticFn, &[0.5, 1.0, 0.25]);
+        assert_float_eq!(neuron.activation.val, 0.56127, 1e-3);
+    }
+
+    #[test]
+    fn deriv_over_act_input() {
+        let mut neuron = neuron1();
+        neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
+        neuron.compute_deriv_over_act_input(&LogisticFn);
+        assert_float_eq!(neuron.activation.val, 0.6048, 1e-3);
+        assert_float_eq!(neuron.activation.deriv_over_input, 0.23901, 1e-3);
+
+        let mut neuron = neuron2();
+        neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
+        neuron.compute_deriv_over_act_input(&LogisticFn);
+        assert_float_eq!(neuron.activation.val, 0.5, 1e-3);
+        assert_float_eq!(neuron.activation.deriv_over_input, 0.25, 1e-3);
+
+        let mut neuron = neuron3();
+        neuron.compute_activation(&LogisticFn, &[1.0, 0.5]);
+        neuron.compute_deriv_over_act_input(&LogisticFn);
+        assert_float_eq!(neuron.activation.val, 0.3952, 1e-3);
+        assert_float_eq!(neuron.activation.deriv_over_input, 0.23901, 1e-3);
+
+        let mut neuron = neuron4();
+        neuron.compute_activation(&LogisticFn, &[0.5, 1.0, 0.25]);
+        neuron.compute_deriv_over_act_input(&LogisticFn);
+        assert_float_eq!(neuron.activation.val, 0.62246, 1e-3);
+        assert_float_eq!(neuron.activation.deriv_over_input, 0.235, 1e-3);
+
+        let mut neuron = neuron5();
+        neuron.compute_activation(&LogisticFn, &[0.5, 1.0, 0.25]);
+        neuron.compute_deriv_over_act_input(&LogisticFn);
+        assert_float_eq!(neuron.activation.val, 0.56127, 1e-3);
+        assert_float_eq!(neuron.activation.deriv_over_input, 0.24613, 1e-3);
     }
 }

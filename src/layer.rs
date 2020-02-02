@@ -114,3 +114,39 @@ impl Layer {
         }
     }
 }
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+    use crate::{functions::LogisticFn, input::Input, neuron};
+
+    pub fn layer1() -> Layer {
+        let mut layer = Layer::new(2, 3);
+        layer.neurons[0] = neuron::test::neuron1();
+        layer.neurons[1] = neuron::test::neuron2();
+        layer.neurons[2] = neuron::test::neuron3();
+        layer
+    }
+
+    pub fn layer2() -> Layer {
+        let mut layer = Layer::new(3, 2);
+        layer.neurons[0] = neuron::test::neuron4();
+        layer.neurons[1] = neuron::test::neuron5();
+        layer
+    }
+
+    #[test]
+    fn activation_val() {
+        let mut prev_layer = layer1();
+        let mut layer = layer2();
+
+        prev_layer.compute_activations(&LogisticFn, &[1.0, 0.5]);
+        layer.compute_activations(&LogisticFn, &prev_layer.neurons);
+
+        assert_float_eq!(prev_layer.neurons[0].as_float(), 0.6048, 1e-3);
+        assert_float_eq!(prev_layer.neurons[1].as_float(), 0.5, 1e-3);
+        assert_float_eq!(prev_layer.neurons[2].as_float(), 0.3952, 1e-3);
+        assert_float_eq!(layer.neurons[0].as_float(), 0.62435, 1e-3);
+        assert_float_eq!(layer.neurons[1].as_float(), 0.57444, 1e-3);
+    }
+}

@@ -1,3 +1,8 @@
+#[cfg(test)]
+#[macro_use]
+/// Test utilities.
+mod test;
+
 /// Trait for types that can be used as input.
 mod input;
 
