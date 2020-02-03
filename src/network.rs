@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use crate::{
     functions::{ActivationFn, Input, LossFn},
     layer::Layer,
@@ -266,21 +269,5 @@ where
         for layer in &mut *self.layers {
             layer.optimize(scale);
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::{
-        functions::{LogisticFn, SquaredError},
-        layer,
-    };
-
-    pub fn network() -> Neural<LogisticFn, SquaredError> {
-        let mut network = Neural::new(LogisticFn, SquaredError, 2, &[3], 2);
-        network.layers[0] = layer::test::layer1();
-        network.layers[1] = layer::test::layer2();
-        network
     }
 }
