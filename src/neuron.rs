@@ -6,12 +6,12 @@ use rand::Rng;
 
 /// A weight on an input of a neuron.
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-struct Weight {
+pub struct Weight {
     /// Value of the weight.
-    val: f64,
+    pub val: f64,
     /// Derivative of the weight.
     #[serde(skip)]
-    derivative: f64,
+    pub derivative: f64,
 }
 
 impl Weight {
@@ -23,12 +23,12 @@ impl Weight {
 
 /// A bias of a neuron.
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-struct Bias {
+pub struct Bias {
     /// Value of the bias.
-    val: f64,
+    pub val: f64,
     /// Derivative of the bias.
     #[serde(skip)]
-    derivative: f64,
+    pub derivative: f64,
 }
 
 impl Bias {
@@ -56,6 +56,7 @@ struct Activation {
     deriv_over_val: f64,
 }
 
+/// A neuron, with weights, bias, and activation values.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Neuron {
     /// Weights of this neuron, each one for an input.
@@ -215,6 +216,16 @@ impl Neuron {
     /// Returns the previously computed derivative over activation val.
     pub fn deriv_over_act_val(&self) -> f64 {
         self.activation.deriv_over_val
+    }
+
+    /// Returns reference to the weights of this neuron.
+    pub fn weights(&self) -> &[Weight] {
+        &self.weights
+    }
+
+    /// Returns reference to the bias of this neuron.
+    pub fn bias(&self) -> &Bias {
+        &self.bias
     }
 }
 

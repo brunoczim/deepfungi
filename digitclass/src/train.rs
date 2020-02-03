@@ -36,7 +36,7 @@ impl Command {
                 LogisticFn,
                 SquaredError,
                 loaded.width * loaded.height,
-                &[16, 16],
+                &[256, 64, 16],
                 10,
             ),
         };

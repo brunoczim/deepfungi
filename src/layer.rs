@@ -201,8 +201,6 @@ pub mod test {
             1e-3
         );
 
-        assert_float_eq!(layer.neurons[0].deriv_over_act_val(), 1.2487, 1e-3);
-        assert_float_eq!(layer.neurons[1].deriv_over_act_val(), -0.85112, 1e-3);
         assert_float_eq!(
             prev_layer.neurons[0].deriv_over_act_val(),
             0.033902,
@@ -218,5 +216,89 @@ pub mod test {
             0.15103,
             1e-3
         );
+        assert_float_eq!(layer.neurons[0].deriv_over_act_val(), 1.2487, 1e-3);
+        assert_float_eq!(layer.neurons[1].deriv_over_act_val(), -0.85112, 1e-3);
+
+        assert_float_eq!(
+            prev_layer.neurons[0].weights()[0].derivative,
+            0.008107,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[0].weights()[1].derivative,
+            0.004053,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[0].bias().derivative,
+            0.008107,
+            1e-3
+        );
+
+        assert_float_eq!(
+            prev_layer.neurons[1].weights()[0].derivative,
+            0.01675,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[1].weights()[1].derivative,
+            0.008379,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[1].bias().derivative,
+            0.01675,
+            1e-3
+        );
+
+        assert_float_eq!(
+            prev_layer.neurons[2].weights()[0].derivative,
+            0.036098,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[2].weights()[1].derivative,
+            0.018049,
+            1e-3
+        );
+        assert_float_eq!(
+            prev_layer.neurons[2].bias().derivative,
+            0.036098,
+            1e-3
+        );
+
+        assert_float_eq!(
+            layer.neurons[0].weights()[0].derivative,
+            0.177098,
+            1e-3
+        );
+        assert_float_eq!(
+            layer.neurons[0].weights()[1].derivative,
+            0.14641,
+            1e-3
+        );
+        assert_float_eq!(
+            layer.neurons[0].weights()[2].derivative,
+            0.115722,
+            1e-3
+        );
+        assert_float_eq!(layer.neurons[0].bias().derivative, 0.29282, 1e-3);
+
+        assert_float_eq!(
+            layer.neurons[1].weights()[0].derivative,
+            -0.12583,
+            1e-3
+        );
+        assert_float_eq!(
+            layer.neurons[1].weights()[1].derivative,
+            -0.10403,
+            1e-3
+        );
+        assert_float_eq!(
+            layer.neurons[1].weights()[2].derivative,
+            -0.08222,
+            1e-3
+        );
+        assert_float_eq!(layer.neurons[1].bias().derivative, -0.20806, 1e-3);
     }
 }
