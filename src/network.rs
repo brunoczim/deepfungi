@@ -60,15 +60,15 @@ where
         activation_fn: A,
         loss_fn: L,
         mut input_size: usize,
-        mid_layer_sizes: &[usize],
+        hidden_layer_sizes: &[usize],
         output_size: usize,
     ) -> Self {
         if input_size == 0 {
             panic!("Input size cannot be zero")
         }
 
-        let mut layers = Vec::with_capacity(mid_layer_sizes.len() + 1);
-        for &layer_size in mid_layer_sizes {
+        let mut layers = Vec::with_capacity(hidden_layer_sizes.len() + 1);
+        for &layer_size in hidden_layer_sizes {
             if layer_size == 0 {
                 panic!("Layer size cannot be zero")
             }
@@ -266,5 +266,21 @@ where
         for layer in &mut *self.layers {
             layer.optimize(scale);
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{
+        functions::{LogisticFn, SquaredError},
+        layer,
+    };
+
+    pub fn network() -> Neural<LogisticFn, SquaredError> {
+        let mut network = Neural::new(LogisticFn, SquaredError, 2, &[3], 2);
+        network.layers[0] = layer::test::layer1();
+        network.layers[1] = layer::test::layer2();
+        network
     }
 }

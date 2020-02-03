@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_macros)]
+
 #[cfg(test)]
 #[macro_use]
 /// Test utilities.
